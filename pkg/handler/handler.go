@@ -3,6 +3,7 @@ package handler
 import (
 	"authService/pkg/service"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"net/http"
 )
 
@@ -33,7 +34,7 @@ type userSignUpInput struct {
 func (h *Handler) signUp(c *gin.Context) {
 	var input userSignUpInput
 	if err := c.BindJSON(&input); err != nil {
-		newErrorResponse(c, http.StatusBadRequest, "incorrect format")
+		newErrorResponse(c, http.StatusBadRequest, "incorrect params")
 		return
 	}
 
@@ -49,7 +50,27 @@ func (h *Handler) signUp(c *gin.Context) {
 }
 
 func (h *Handler) getTokens(c *gin.Context) {
+	userIdString := c.Query("user_id")
+	userId, err := uuid.Parse(userIdString)
+	if err != nil {
+		newErrorResponse(c, http.StatusBadRequest, "incorrect params")
+		return
+	}
+	accessToken, err := h.services.GenerateAccessToken(userId)
+	if err != nil {
+		newErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	refreshToken, err := h.services.GenerateRefreshToken(userId)
+	if err != nil {
+		newErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
 
+	c.JSON(http.StatusOK, map[string]interface{}{
+		"access_token":  accessToken,
+		"refresh_token": refreshToken,
+	})
 }
 
 func (h *Handler) refresh(c *gin.Context) {
