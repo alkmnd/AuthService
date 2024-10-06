@@ -73,6 +73,31 @@ func (h *Handler) getTokens(c *gin.Context) {
 	})
 }
 
+type refreshTokenInput struct {
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+}
+
 func (h *Handler) refresh(c *gin.Context) {
+	var input refreshTokenInput
+	if err := c.BindJSON(&input); err != nil {
+		newErrorResponse(c, http.StatusBadRequest, "incorrect params")
+		return
+	}
+	userId, ip, id, err := h.services.ParseAccessToken(input.AccessToken)
+	if err != nil {
+		newErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	if ip != c.ClientIP() {
+		_ = h.services.SendWarning(userId)
+	}
+
+	isValid := h.services.IsRefreshValid(input.RefreshToken, userId, id)
+	if !isValid {
+		newErrorResponse(c, http.StatusBadRequest, "incorrect refresh token")
+		return
+	}
 
 }

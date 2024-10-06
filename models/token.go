@@ -12,5 +12,4 @@ type Token struct {
 	Jti       string    `json:"jti" db:"jti"`
 	CreatedAt time.Time `json:"created_at" db:"created_at"`
 	ExpiresAt time.Time `json:"expires_at" db:"expires_at"`
-	IsRevoked bool      `json:"is_revoked" db:"is_revoked"`
 }
