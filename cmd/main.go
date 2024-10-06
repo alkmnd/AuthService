@@ -10,12 +10,12 @@ import (
 
 func main() {
 	db, err := repository.NewPostgresDB(repository.Config{
-		Host:     "",
-		Port:     "",
-		Username: "",
-		DBName:   "",
-		SSLMode:  "",
-		Password: "",
+		Host:     "localhost",
+		Port:     "5432",
+		Username: "user",
+		DBName:   "authservice",
+		SSLMode:  "disable",
+		Password: "qwerty",
 	})
 	if err != nil {
 		logrus.Fatalf("error while connecting to the database: %s", err.Error())
