@@ -1,11 +1,17 @@
 package handler
 
-import "github.com/gin-gonic/gin"
+import (
+	"authService/pkg/service"
+	"github.com/gin-gonic/gin"
+	"net/http"
+)
 
-type Handler struct{}
+type Handler struct {
+	services *service.AuthService
+}
 
-func NewHandler() *Handler {
-	return &Handler{}
+func NewHandler(services *service.AuthService) *Handler {
+	return &Handler{services: services}
 }
 
 func (h *Handler) InitRoutes() *gin.Engine {
@@ -13,13 +19,36 @@ func (h *Handler) InitRoutes() *gin.Engine {
 	auth := router.Group("/auth")
 	{
 		auth.POST("/sign-up", h.signUp)
+		auth.GET("/tokens", h.getTokens)
 		auth.GET("/refresh", h.refresh)
 	}
 
 	return router
 }
 
+type userSignUpInput struct {
+	Email string `json:"email"`
+}
+
 func (h *Handler) signUp(c *gin.Context) {
+	var input userSignUpInput
+	if err := c.BindJSON(&input); err != nil {
+		newErrorResponse(c, http.StatusBadRequest, "incorrect format")
+		return
+	}
+
+	id, err := h.services.CreateUser(input.Email)
+	if err != nil {
+		newErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	c.JSON(http.StatusOK, map[string]interface{}{
+		"id": id,
+	})
+}
+
+func (h *Handler) getTokens(c *gin.Context) {
 
 }
 
