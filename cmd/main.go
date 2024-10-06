@@ -3,12 +3,25 @@ package main
 import (
 	"authService"
 	handler2 "authService/pkg/handler"
+	"authService/pkg/repository "
 	service2 "authService/pkg/service"
 	"github.com/sirupsen/logrus"
 )
 
 func main() {
-	service := service2.NewAuthService()
+	db, err := repository.NewPostgresDB(repository.Config{
+		Host:     "",
+		Port:     "",
+		Username: "",
+		DBName:   "",
+		SSLMode:  "",
+		Password: "",
+	})
+	if err != nil {
+		logrus.Fatalf("error while connecting to the database: %s", err.Error())
+	}
+	repo := repository.NewAuthPostgres(db)
+	service := service2.NewAuthService(repo)
 	handler := handler2.NewHandler(service)
 	srv := new(authService.Server)
 	if err := srv.Run("8080", handler.InitRoutes()); err != nil {

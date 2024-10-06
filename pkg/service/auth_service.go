@@ -23,10 +23,10 @@ type accessTokenClaims struct {
 }
 
 type AuthService struct {
-	repo repository.AuthPostgres
+	repo *repository.AuthPostgres
 }
 
-func NewAuthService(repo repository.AuthPostgres) *AuthService {
+func NewAuthService(repo *repository.AuthPostgres) *AuthService {
 	return &AuthService{repo: repo}
 }
 
