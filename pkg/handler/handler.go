@@ -56,12 +56,12 @@ func (h *Handler) getTokens(c *gin.Context) {
 		newErrorResponse(c, http.StatusBadRequest, "incorrect params")
 		return
 	}
-	accessToken, err := h.services.GenerateAccessToken(userId)
+	accessToken, err := h.services.GenerateAccessToken(userId, c.ClientIP())
 	if err != nil {
 		newErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	refreshToken, err := h.services.GenerateRefreshToken(userId)
+	refreshToken, err := h.services.GenerateRefreshToken(userId, c.ClientIP(), "")
 	if err != nil {
 		newErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
