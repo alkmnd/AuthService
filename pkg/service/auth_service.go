@@ -2,9 +2,10 @@ package service
 
 import (
 	"authService/models"
-	"authService/pkg/repository "
+	"authService/pkg/repository"
 	"encoding/base64"
 	"errors"
+	"fmt"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
@@ -64,7 +65,7 @@ func (s *AuthService) GenerateAccessToken(userId uuid.UUID, ipAddress string) (s
 func (s *AuthService) GenerateRefreshToken(userId uuid.UUID, ipAddress string, jti string) (string, error) {
 	refreshToken := uuid.New().String()
 	encodedRefreshToken := base64.StdEncoding.EncodeToString([]byte(refreshToken))
-	hashedToken, err := bcrypt.GenerateFromPassword([]byte(refreshToken), bcrypt.DefaultCost)
+	hashedToken, err := bcrypt.GenerateFromPassword([]byte(encodedRefreshToken), bcrypt.DefaultCost)
 	if err != nil {
 		return "", err
 	}
@@ -78,6 +79,9 @@ func (s *AuthService) GenerateRefreshToken(userId uuid.UUID, ipAddress string, j
 		CreatedAt: createdAt,
 		ExpiresAt: expiresAt,
 	})
+	if err != nil {
+		return "", err
+	}
 
 	return encodedRefreshToken, nil
 }
@@ -102,12 +106,22 @@ func (s *AuthService) ParseAccessToken(accessToken string) (uuid.UUID, string, s
 	return claims.UserId, claims.IpAddress, claims.Id, nil
 }
 
-func (s *AuthService) IsRefreshValid(refreshToken string, userId uuid.UUID, accessId string) bool {
-	hashedToken, err := bcrypt.GenerateFromPassword([]byte(refreshToken), bcrypt.DefaultCost)
+func (s *AuthService) IsRefreshValid(refreshToken string, userId uuid.UUID, accessId string, ipAddress string) bool {
+
+	repoToken, err := s.repo.GetTokenInfo(userId)
 	if err != nil {
 		return false
 	}
-	repoToken, err := s.repo.GetTokenInfo(string(hashedToken), userId)
+	println(repoToken.TokenHash)
+	err = bcrypt.CompareHashAndPassword([]byte(repoToken.TokenHash), []byte(refreshToken))
+	if err != nil {
+		return false
+	}
+	if repoToken.IpAddress != ipAddress {
+		fmt.Println(ipAddress)
+		_ = s.SendWarning(userId)
+		return true
+	}
 	if accessId != repoToken.Jti {
 		return false
 	}
@@ -134,6 +148,6 @@ func (s *AuthService) SendWarning(userId uuid.UUID) error {
 
 }
 
-func (s *AuthService) UpdateAccessId(tokenHash string, userId uuid.UUID, jti string) error {
-	return s.repo.UpdateAccessId(tokenHash, userId, jti)
+func (s *AuthService) UpdateAccessId(userId uuid.UUID, jti string) error {
+	return s.repo.UpdateAccessId(userId, jti)
 }

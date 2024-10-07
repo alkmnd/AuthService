@@ -94,10 +94,23 @@ func (h *Handler) refresh(c *gin.Context) {
 		_ = h.services.SendWarning(userId)
 	}
 
-	isValid := h.services.IsRefreshValid(input.RefreshToken, userId, id)
+	isValid := h.services.IsRefreshValid(input.RefreshToken, userId, id, c.ClientIP())
 	if !isValid {
 		newErrorResponse(c, http.StatusBadRequest, "incorrect refresh token")
 		return
 	}
+
+	accessToken, id, err := h.services.GenerateAccessToken(userId, c.ClientIP())
+	if err != nil {
+		newErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	err = h.services.UpdateAccessId(userId, id)
+
+	c.JSON(http.StatusOK, map[string]interface{}{
+		"access_token":  accessToken,
+		"refresh_token": input.RefreshToken,
+	})
 
 }

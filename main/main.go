@@ -3,7 +3,7 @@ package main
 import (
 	"authService"
 	handler2 "authService/pkg/handler"
-	"authService/pkg/repository "
+	"authService/pkg/repository"
 	service2 "authService/pkg/service"
 	"github.com/joho/godotenv"
 	"github.com/sirupsen/logrus"
